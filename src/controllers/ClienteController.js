@@ -1,4 +1,5 @@
 import pkg from '@prisma/client';
+import moment from 'moment-timezone';
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
@@ -27,14 +28,14 @@ export default {
           message: "Erro: Cliente já existe!"
         });
       }
-
+      const realizadoEmAdjusted = moment.tz(dataCadastro, 'America/Sao_Paulo').toISOString();
       // Criar o cliente no banco de dados
       const cliente = await prisma.cliente.create({
         data: {
           nome,
           sobrenome,
           celular,
-          dataCadastro: new Date(dataCadastro), // Converte automaticamente para ISO-8601
+          dataCadastro: new Date(realizadoEmAdjusted), // Converte automaticamente para ISO-8601
           horario,
         }
       });
@@ -85,7 +86,7 @@ export default {
       if (!cliente) {
         return res.status(404).json({ message: 'Cliente não encontrado' });
       }
-
+      const realizadoEmAdjusted = moment.tz(dataCadastro, 'America/Sao_Paulo').toISOString();
       // Atualizar os dados do cliente
       cliente = await prisma.cliente.update({
         where: { id: Number(id) },
@@ -93,7 +94,7 @@ export default {
           nome,
           sobrenome,
           celular,
-          dataCadastro: new Date(dataCadastro), // Converte automaticamente para ISO-8601
+          dataCadastro: new Date(realizadoEmAdjusted), // Converte automaticamente para ISO-8601
           horario,
         }
       });
