@@ -19,6 +19,7 @@ router.get('/servicos', ServicoController.findAllServico);
 router.get('/servico/:id', ServicoController.getServicoById);
 router.get('/servico/cliente/:id', ServicoController.getServicosByClienteId); // Nova rota adicionada
 router.put('/updateServico/:id', ServicoController.updateServico);
+router.put('/confirmarServico/:id', ServicoController.updateRealizado);
 router.delete('/deletarServico/:id', ServicoController.deleteServico);
 router.get('/financas/total-por-mes', ServicoController.getTotalPorMes);
 router.get('/financas/total-por-periodo', ServicoController.getTotalPorPeriodo);

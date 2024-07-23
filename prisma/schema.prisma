@@ -36,6 +36,7 @@ model Servico {
   quantidade  Int
   valor       Float
   desconto    Float
+  realizado   Boolean  @default(false) // Novo campo para indicar se o serviço foi realizado
 
   funcionario       String
   clienteId         Int

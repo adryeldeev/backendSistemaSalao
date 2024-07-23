@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  web:
+    image: node:14
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: sh -c "npm install && npm start"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      MYSQL_HOST: db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: mydatabase
+
+  db:
+    image: mysql:8
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: mydatabase
+
+volumes:
+  db-data:

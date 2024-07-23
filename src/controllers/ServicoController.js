@@ -6,46 +6,47 @@ const prisma = new PrismaClient();
 
 export default {
   async createServico(req, res) {
-    const { produtoNome, realizadoEm, quantidade, valor, desconto, funcionario, clienteId } = req.body;
+  const { produtoNome, realizadoEm, quantidade, valor, desconto, funcionario, clienteId } = req.body;
 
-    try {
-      const cliente = await prisma.cliente.findUnique({
-        where: { id: Number(clienteId) }
-      });
+  try {
+    const cliente = await prisma.cliente.findUnique({
+      where: { id: Number(clienteId) }
+    });
 
-      if (!cliente) {
-        return res.status(404).json({ message: 'Cliente não encontrado' });
-      }
-
-      let servicoCatalogo = await prisma.servicoCatalogo.findFirst({
-        where: { nome: produtoNome }
-      });
-
-      if (!servicoCatalogo) {
-        return res.status(404).json({ message: 'Serviço no catálogo não encontrado' });
-      }
-
-      // Ajustando a data para o fuso horário America/Sao_Paulo
-      const realizadoEmAdjusted = moment.tz(realizadoEm, 'America/Sao_Paulo').toISOString();
-
-      const novoServico = await prisma.servico.create({
-        data: {
-          produtoNome: servicoCatalogo.nome,
-          realizadoEm: realizadoEmAdjusted,
-          quantidade,
-          valor,
-          desconto: desconto !== undefined ? Number(desconto) : undefined,
-          funcionario,
-          cliente: { connect: { id: Number(clienteId) } },
-          servicoCatalogo: { connect: { id: servicoCatalogo.id } }
-        }
-      });
-
-      return res.status(201).json(novoServico);
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
+    if (!cliente) {
+      return res.status(404).json({ message: 'Cliente não encontrado' });
     }
-  },
+
+    let servicoCatalogo = await prisma.servicoCatalogo.findFirst({
+      where: { nome: produtoNome }
+    });
+
+    if (!servicoCatalogo) {
+      return res.status(404).json({ message: 'Serviço no catálogo não encontrado' });
+    }
+
+    // Ajustando a data para o fuso horário America/Sao_Paulo
+    const realizadoEmAdjusted = moment.tz(realizadoEm, 'America/Sao_Paulo').toISOString();
+
+    const novoServico = await prisma.servico.create({
+      data: {
+        produtoNome: servicoCatalogo.nome,
+        realizadoEm: realizadoEmAdjusted,
+        quantidade,
+        valor,
+        desconto: desconto !== undefined ? Number(desconto) : undefined,
+        funcionario,
+        cliente: { connect: { id: Number(clienteId) } },
+        servicoCatalogo: { connect: { id: servicoCatalogo.id } }
+      }
+    });
+
+    return res.status(201).json(novoServico);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+},
+
 
   async findAllServico(req, res) {
     try {
@@ -81,40 +82,20 @@ export default {
         return res.status(404).json({ message: 'Serviço não encontrado' });
       }
   
-      // Verifica se o cliente existe
-      const cliente = await prisma.cliente.findUnique({
-        where: { id: Number(clienteId) }
-      });
-  
-      if (!cliente) {
-        return res.status(404).json({ message: 'Cliente não encontrado' });
-      }
-  
-      // Busca pelo serviço no catálogo pelo nome do produto
-      let servicoCatalogo = await prisma.servicoCatalogo.findFirst({
-        where: {
-          nome: servico.produtoNome // Utiliza o nome do produto do serviço existente
-        }
-      });
-  
-      if (!servicoCatalogo) {
-        return res.status(404).json({ message: 'Serviço no catálogo não encontrado' });
-      }
-  
       // Ajusta a data para o fuso horário America/Sao_Paulo
       const realizadoEmAdjusted = moment.tz(realizadoEm, 'America/Sao_Paulo').toISOString();
   
-      // Atualiza o serviço com os novos dados
+      // Atualiza o serviço com os novos dados, incluindo o campo `realizado`
       servico = await prisma.servico.update({
         where: { id: Number(id) },
         data: {
-          realizadoEm: realizadoEmAdjusted, // Usa a data ajustada
+          realizadoEm: realizadoEmAdjusted,
           quantidade,
           valor,
           desconto: desconto !== undefined ? Number(desconto) : undefined,
           funcionario,
-          cliente: { connect: { id: Number(clienteId) } }, // Conectar ao cliente existente
-          servicoCatalogo: { connect: { id: servicoCatalogo.id } } // Conectar ao servicoCatalogo encontrado
+          cliente: { connect: { id: Number(clienteId) } },
+          servicoCatalogo: { connect: { id: servico.servicoCatalogoId } }
         }
       });
   
@@ -138,7 +119,30 @@ export default {
       return res.status(500).json({ message: error.message });
     }
   },
+  
+async updateRealizado(req, res) {
+  const { id } = req.params;
+  const { realizado } = req.body;
 
+  try {
+    const servico = await prisma.servico.findUnique({
+      where: { id: Number(id) },
+    });
+
+    if (!servico) {
+      return res.status(404).json({ message: 'Serviço não encontrado' });
+    }
+
+    const updatedServico = await prisma.servico.update({
+      where: { id: Number(id) },
+      data: { realizado: Boolean(realizado) },
+    });
+
+    return res.status(200).json(updatedServico);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+},
   async getTotalPorMes(req, res) {
     const { month } = req.query; // Captura o parâmetro de mês da query string, se existir
   
@@ -157,6 +161,7 @@ export default {
             servicos
           WHERE 
             DATE_FORMAT(realizadoEm, '%Y-%m') = ${month}
+            AND realizado = true  -- Considera apenas os serviços realizados
           GROUP BY 
             mes, clienteId
           ORDER BY 
@@ -172,6 +177,8 @@ export default {
             CAST(SUM(valor * quantidade) AS DECIMAL(10, 2)) as totalVendas
           FROM 
             servicos
+          WHERE 
+            realizado = true  -- Considera apenas os serviços realizados
           GROUP BY 
             mes, clienteId
           ORDER BY 
@@ -193,6 +200,7 @@ export default {
       return res.status(500).json({ message: error.message });
     }
   },
+  
  // Backend (Node.js / Express)
 
 // Exemplo usando Prisma para consulta SQL segura
@@ -211,6 +219,7 @@ async getTotalPorPeriodo(req, res) {
         servicos
       WHERE 
         realizadoEm BETWEEN ${startDate} AND ${endDate}
+        AND realizado = true  -- Considera apenas os serviços realizados
       GROUP BY 
         data, clienteId
       ORDER BY 
