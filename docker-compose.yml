@@ -1,29 +1,30 @@
 version: '3.8'
-
 services:
   web:
-    image: node:14
-    volumes:
-      - .:/app
-    working_dir: /app
-    command: sh -c "npm install && npm start"
+    image: node:16  # Substitua pelo nome da imagem que você deseja usar
+    container_name: backendsalao-web-1
     ports:
-      - "3000:3000"
+      - "8000:8000"
+    volumes:
+      - .:/app  # Monte seu diretório atual no contêiner para desenvolvimento
+    working_dir: /app
+    command: ["npm", "start"]  # Ou o comando que você usa para iniciar o aplicativo
     depends_on:
       - db
-    environment:
-      MYSQL_HOST: db
-      MYSQL_USER: root
-      MYSQL_PASSWORD: password
-      MYSQL_DATABASE: mydatabase
+    networks:
+      - backendsalao-network
 
   db:
     image: mysql:8
-    volumes:
-      - db-data:/var/lib/mysql
+    container_name: backendsalao-db-1
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: mydatabase
+      MYSQL_ROOT_PASSWORD: WFOSgvAITzdDhtkfhXXbUEdJzhExIPud
+      MYSQL_DATABASE: railway
+    ports:
+      - "3308:3306"  # Mapeie a porta 3308 no host para a porta 3306 no contêiner
+    networks:
+      - backendsalao-network
 
-volumes:
-  db-data:
+networks:
+  backendsalao-network:
+    driver: bridge
