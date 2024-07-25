@@ -31,19 +31,20 @@ model ServicoCatalogo {
 }
 
 model Servico {
-  id          Int      @id @default(autoincrement())
-  produtoNome String
-  realizadoEm DateTime @default(now())
-  quantidade  Int
-  valor       Float
-  desconto    Float
-  realizado   Boolean  @default(false) // Novo campo para indicar se o serviço foi realizado
-
+  id                Int             @id @default(autoincrement())
+  produtoNome       String
+  realizadoEm       DateTime        @default(now())
+  quantidade        Int
+  valor             Float
+  desconto          Float
   funcionario       String
   clienteId         Int
-  cliente           Cliente         @relation(fields: [clienteId], references: [id])
   servicoCatalogoId Int
-  servicoCatalogo   ServicoCatalogo @relation(fields: [servicoCatalogoId], references: [id], name: "ServicoToServicoCatalogo")
+  realizado         Boolean         @default(false)
+  cliente           Cliente         @relation(fields: [clienteId], references: [id])
+  servicoCatalogo   ServicoCatalogo @relation("ServicoToServicoCatalogo", fields: [servicoCatalogoId], references: [id])
 
+  @@index([clienteId], map: "servicos_clienteId_fkey")
+  @@index([servicoCatalogoId], map: "servicos_servicoCatalogoId_fkey")
   @@map("servicos")
 }

@@ -201,7 +201,7 @@ async updateRealizado(req, res) {
     }
   },
   
- // Backend (Node.js / Express)
+
 
 // Exemplo usando Prisma para consulta SQL segura
 async getTotalPorPeriodo(req, res) {

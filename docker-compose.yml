@@ -1,14 +1,14 @@
 version: '3.8'
 services:
   web:
-    image: node:16  # Substitua pelo nome da imagem que você deseja usar
+    image: node:16
     container_name: backendsalao-web-1
     ports:
       - "8000:8000"
     volumes:
-      - .:/app  # Monte seu diretório atual no contêiner para desenvolvimento
+      - .:/app
     working_dir: /app
-    command: ["npm", "start"]  # Ou o comando que você usa para iniciar o aplicativo
+    command: ["npm", "start"]
     depends_on:
       - db
     networks:
@@ -21,9 +21,12 @@ services:
       MYSQL_ROOT_PASSWORD: WFOSgvAITzdDhtkfhXXbUEdJzhExIPud
       MYSQL_DATABASE: railway
     ports:
-      - "3308:3306"  # Mapeie a porta 3308 no host para a porta 3306 no contêiner
+      - "27552:3306"
     networks:
       - backendsalao-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
 networks:
   backendsalao-network:
