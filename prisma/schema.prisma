@@ -9,14 +9,19 @@ datasource db {
 }
 
 model Cliente {
-  id           Int       @id @default(autoincrement())
-  nome         String
-  sobrenome    String
-  celular      String
-  dataCadastro DateTime  @default(now())
-  horario      String
-  created_at   DateTime? @default(now())
-  Servico      Servico[]
+  id             Int       @id @default(autoincrement())
+  nome           String
+  sobrenome      String
+  celular        String
+  dataCadastro   DateTime  @default(now())
+  horario        String
+  created_at     DateTime? @default(now())
+  visitCount     Int       @default(0)
+  relevanceScore Int
+  lastUpdated    DateTime  @default(now())
+  frequencia     Int
+  relevante      Int
+  Servicos       Servico[]
 
   @@map("clientes")
 }
@@ -25,7 +30,7 @@ model ServicoCatalogo {
   id       Int       @id @default(autoincrement())
   nome     String
   preco    Float
-  servicos Servico[] @relation("ServicoToServicoCatalogo")
+  Servicos Servico[]
 
   @@map("servico_catalogo")
 }
@@ -34,15 +39,17 @@ model Servico {
   id                Int             @id @default(autoincrement())
   produtoNome       String
   realizadoEm       DateTime        @default(now())
+  horario           String
   quantidade        Int
   valor             Float
   desconto          Float
   funcionario       String
   clienteId         Int
-  servicoCatalogoId Int
   realizado         Boolean         @default(false)
+  lastUpdated       DateTime?
+  servicoCatalogoId Int
   cliente           Cliente         @relation(fields: [clienteId], references: [id])
-  servicoCatalogo   ServicoCatalogo @relation("ServicoToServicoCatalogo", fields: [servicoCatalogoId], references: [id])
+  servicoCatalogo   ServicoCatalogo @relation(fields: [servicoCatalogoId], references: [id])
 
   @@index([clienteId], map: "servicos_clienteId_fkey")
   @@index([servicoCatalogoId], map: "servicos_servicoCatalogoId_fkey")
