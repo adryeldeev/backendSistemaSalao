@@ -172,6 +172,7 @@ async  updateRealizado (req, res) {
         data: { realizado: Boolean(realizado) },
       });
 
+  
       return res.status(200).json(updatedServico);
     } catch (error) {
       return res.status(500).json({ message: error.message });
@@ -221,31 +222,37 @@ async  updateRealizado (req, res) {
     }
   },
 
- async getTotalPorPeriodo (req, res) {
-    const { startDate, endDate } = req.query;
-
+  async  getTotalPorPeriodo  (req, res) {
     try {
       const totalPorPeriodo = await prisma.$queryRaw`
         SELECT 
-          DATE_FORMAT(realizadoEm, '%Y-%m-%d') as data,
-          clienteId,
-          COUNT(*) as totalServicos,
-          CAST(SUM(valor * quantidade - desconto) AS DECIMAL(10, 2)) as totalValor,
-          CAST(SUM(valor * quantidade) AS DECIMAL(10, 2)) as totalVendas
+          DATE_FORMAT(realizadoEm, '%Y-%m') as mes,  -- Formata a data para exibir mês e ano
+          COUNT(*) as totalServicos,                 -- Conta o total de serviços realizados
+          CAST(SUM(valor * quantidade - desconto) AS DECIMAL(10, 2)) as totalValor,  -- Soma total dos valores com desconto
+          35 as totalVendas  -- Retorna um valor fixo de 35 para as vendas, conforme solicitado
         FROM 
           servicos
         WHERE 
-          realizadoEm BETWEEN ${startDate} AND ${endDate}
-          AND realizado = true
+          realizadoEm BETWEEN ${req.query.startDate} AND ${req.query.endDate}
+          AND realizado = true  -- Filtra apenas serviços que foram realizados
         GROUP BY 
-          data, clienteId
+          mes
         ORDER BY 
-          data;
+          mes;
       `;
-
-      return res.status(200).json(totalPorPeriodo);
+  
+      // Converte BigInt para Number se necessário
+      const result = totalPorPeriodo.map(item => ({
+        ...item,
+        totalValor: Number(item.totalValor),
+        totalVendas: Number(item.totalVendas),
+        totalServicos: Number(item.totalServicos),
+      }));
+  
+      res.json(result);
     } catch (error) {
-      return res.status(500).json({ message: error.message });
+      console.error('Error ao obter dados financeiros', error)
+      res.status(500).json({ error: 'Erro ao obter os dados financeiros.' });
     }
   },
 
