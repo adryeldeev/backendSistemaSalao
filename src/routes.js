@@ -11,6 +11,7 @@ const router = Router();
 // Rotas para Usuários
 router.post('/createUser',UserController.createUser)
 router.post('/login', UserController.loginUser)
+router.get('/validation', UserController.validateToken)
 router.get('/user/:id',authenticate, UserController.getUserById)
 
 

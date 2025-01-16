@@ -190,6 +190,18 @@ export default {
       throw new Error("Erro ao atualizar a relevância: " + error.message);
     }
   },
+  async getClientesRelevantes(req, res) {
+    try {
+        const clientesRelevantes = await Cliente.findAll({
+            where: {
+                relevante: true 
+            }
+        });
+        return res.json(clientesRelevantes);
+    } catch (error) {
+        return res.status(500).json({ message: 'Erro ao buscar clientes relevantes', error });
+    }
+}
 };
 
 

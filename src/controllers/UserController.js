@@ -14,6 +14,8 @@ const messages = {
   userNotFound: "Usuário não encontrado",
   passwordUpdated: "Senha atualizada com sucesso",
   userCreated: "Usuário criado com sucesso",
+  tokenInvalid: "Token inválido ou expirado",
+  tokenValid: "Token válido",
 };
 
 export default {
@@ -32,7 +34,7 @@ export default {
 
       const userExiste = await prisma.user.findFirst({
         where: {
-          OR: [ { email: normalizedEmail }],
+          OR: [{ email: normalizedEmail }],
         },
       });
 
@@ -66,33 +68,32 @@ export default {
 
   async loginUser(req, res) {
     const { email, password } = req.body;
-  
+
     if (!email || !password) {
       return res.status(400).json({ message: messages.fieldsMissing });
     }
-  
+
     try {
       const normalizedEmail = email.trim().toLowerCase();
-  
+
       const user = await prisma.user.findFirst({
         where: { email: normalizedEmail },
       });
-  
+
       if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ message: messages.invalidCredentials });
       }
-  
+
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
         expiresIn: "7d",
       });
-  
-      // Include user data in the response
+
       const userData = {
         id: user.id,
         username: user.username,
         email: user.email,
       };
-  
+
       return res.status(200).json({
         error: false,
         message: "Login realizado com sucesso!",
@@ -107,20 +108,51 @@ export default {
       });
     }
   },
+
+  async validateToken(req, res) {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "Token não fornecido" });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: messages.userNotFound });
+      }
+
+      return res.status(200).json({
+        error: false,
+        message: messages.tokenValid,
+        userData: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+        },
+      });
+    } catch (error) {
+      return res.status(401).json({ message: messages.tokenInvalid });
+    }
+  },
+
   async getUserById(req, res) {
-    const { id } = req.params; 
-  
+    const { id } = req.params;
+
     try {
       const user = await prisma.user.findFirst({
-        where: { 
-          id: id 
-        }
+        where: { id: id },
       });
-  
+
       if (!user) {
-        return res.status(404).json({ message: "Usuário não encontrado" });
+        return res.status(404).json({ message: messages.userNotFound });
       }
-  
+
       return res.status(200).json({
         error: false,
         message: "Usuário encontrado com sucesso",
