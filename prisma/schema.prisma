@@ -7,64 +7,68 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id               String           @id @default(uuid())
-  username         String
-  email            String           @unique
-  password         String
-  resetPasswordToken    String?   // Token de reset de senha
-  resetPasswordExpires  DateTime? // Data de expiração do token
-  clientes         Cliente[]
-  servicoCatalogos ServicoCatalogo[]
+  id                    String            @id @default(uuid())
+  username              String
+  email                 String            @unique
+  password              String
+  resetPasswordToken    String?           // Token de reset de senha
+  resetPasswordExpires  DateTime?         // Data de expiração do token
+  cliente               Cliente[]         @relation("UserClientes")
+  servicoCatalogos      ServicoCatalogo[] @relation("UserServicoCatalogos")
+  servico               Servico[]         @relation("UserServicos")
 }
 
 model Cliente {
-  id               Int              @id @default(autoincrement())
-  nome             String
-  sobrenome        String
-  celular          String
-  dataCadastro     DateTime         @default(now())
-  horario          String
-  createdAt        DateTime?        @default(now())
-  visitCount       Int              @default(0)
-  scoreRelevancia  Int?             // Temporariamente opcional
-  lastUpdated      DateTime         @default(now())
-  frequencia       Int
-  relevante        Int
-  servicos         Servico[]
-  userId           String?          // Temporariamente opcional
-  user             User?            @relation(fields: [userId], references: [id])
+  id                   Int              @id @default(autoincrement())
+  nome                 String
+  sobrenome            String
+  celular              String
+  dataCadastro         DateTime         @default(now())
+  horario              String
+  createdAt            DateTime?        @default(now())
+  visitCount           Int              @default(0)
+  scoreRelevancia      Int?             // Temporariamente opcional
+  lastUpdated          DateTime         @default(now())
+  frequencia           Int
+  relevante            Int
+  servicos             Servico[]
+  userId               String?          // Temporariamente opcional
+  user                 User?            @relation("UserClientes", fields: [userId], references: [id]) // Relação com User opcional
 
   @@index([userId], map: "clientes_userId_fkey")
   @@map("clientes")
 }
 
 model ServicoCatalogo {
-  id               Int              @id @default(autoincrement())
-  nome             String
-  preco            Float
-  servicos         Servico[]
-  userId           String?          // Temporariamente opcional
-  user             User?            @relation(fields: [userId], references: [id])
+  id                   Int              @id @default(autoincrement())
+  nome                 String
+  preco                Float
+  servicos             Servico[]
+  userId               String?          // Temporariamente opcional
+  user                 User?            @relation("UserServicoCatalogos", fields: [userId], references: [id]) // Relação com User opcional
 
   @@map("servico_catalogo")
 }
 
 model Servico {
-  id               Int              @id @default(autoincrement())
-  produtoNome      String
-  realizadoEm      DateTime         @default(now())
-  horario          String
-  quantidade       Int
-  valor            Float
-  desconto         Float
-  funcionario      String
-  clienteId        Int
-  realizado        Boolean          @default(false)
-  lastUpdated      DateTime?
-  servicoCatalogoId Int
-  cliente          Cliente          @relation(fields: [clienteId], references: [id])
-  servicoCatalogo  ServicoCatalogo  @relation(fields: [servicoCatalogoId], references: [id])
+  id                   Int              @id @default(autoincrement())
+  produtoNome          String
+  realizadoEm          DateTime         @default(now())
+  horario              String
+  quantidade           Int
+  valor                Float
+  desconto             Float
+  funcionario          String
+  clienteId            Int
+  realizado            Boolean          @default(false)
+  lastUpdated          DateTime?
+  servicoCatalogoId    Int
+  userId               String?          // Temporariamente opcional
+  user                 User?            @relation("UserServicos", fields: [userId], references: [id]) // Relação com User opcional
+  cliente              Cliente          @relation(fields: [clienteId], references: [id])
+  servicoCatalogo      ServicoCatalogo  @relation(fields: [servicoCatalogoId], references: [id])
 
   @@index([clienteId], map: "servicos_clienteId_fkey")
   @@index([servicoCatalogoId], map: "servicos_servicoCatalogoId_fkey")
