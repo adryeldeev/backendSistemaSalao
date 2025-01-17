@@ -34,7 +34,7 @@ export default {
 
       const userExiste = await prisma.user.findFirst({
         where: {
-          OR: [{ email: normalizedEmail }],
+          email: normalizedEmail,
         },
       });
 
