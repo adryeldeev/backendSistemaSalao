@@ -1,8 +1,8 @@
-import pkg from "@prisma/client";
 import moment from "moment-timezone";
-const { PrismaClient } = pkg;
-
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
+
+
 
 const getMesAtual = () => {
   return moment().format("YYYY-MM");

@@ -1,7 +1,6 @@
-import pkg from '@prisma/client';
-import moment from 'moment-timezone';
-const { PrismaClient } = pkg;
 
+import moment from 'moment-timezone';
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export default {

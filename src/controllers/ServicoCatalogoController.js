@@ -1,7 +1,6 @@
-import pkg from "@prisma/client";
-const { PrismaClient } = pkg;
-
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
+
 
 export default {
   // Criação de um novo Serviço no Catálogo

@@ -1,9 +1,8 @@
-import pkg from "@prisma/client";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 dotenv.config();
-const { PrismaClient } = pkg;
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const messages = {
@@ -34,7 +33,7 @@ export default {
 
       const userExiste = await prisma.user.findUnique({
         where: {
-          email: normalizedEmail,
+          email: normalizedEmail
         },
       });
 
