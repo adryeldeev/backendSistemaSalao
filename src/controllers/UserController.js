@@ -32,7 +32,7 @@ export default {
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      const userExiste = await prisma.user.findFirst({
+      const userExiste = await prisma.user.findUnique({
         where: {
           email: normalizedEmail,
         },
