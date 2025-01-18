@@ -31,15 +31,15 @@ export default {
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      const userExiste = await prisma.user.findUnique({
-        where: {
-          email: normalizedEmail
-        },
+      const userExiste = await prisma.user.findFirst({
+        where: { email: normalizedEmail },
       });
-
+     
       if (userExiste) {
-        return res.status(400).json({ message: messages.emailExists });
+        return res.status(400).json({ message: "E-mail já existe. Tente outro!" });
       }
+     
+      
 
       const hashPassword = await bcrypt.hash(password, 10);
 
