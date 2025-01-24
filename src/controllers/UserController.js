@@ -3,6 +3,11 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import "dotenv/config"; // Carrega as variáveis do arquivo .env
 
+// Verifica se JWT_SECRET está definido no.env
+if (!process.env.JWT_SECRET) {
+  console.error("JWT_SECRET não está definido! Verifique suas variáveis de ambiente.");
+  process.exit(1); // Encerra o processo se a variável estiver ausente
+}
 const prisma = new PrismaClient();
 
 const messages = {
@@ -82,7 +87,8 @@ export default {
       if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ message: messages.invalidCredentials });
       }
-
+      
+      console.log("JWT_SECRET:", process.env.JWT_SECRET);
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
         expiresIn: "7d",
       });
