@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config"; // Carrega as variáveis do arquivo .env
+
 const prisma = new PrismaClient();
 
 const messages = {
@@ -21,9 +21,10 @@ export default {
   async createUser(req, res) {
     const { username, email, password, confirmPassword } = req.body;
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: messages.fieldsMissing });
     }
+
     if (password !== confirmPassword) {
       return res.status(400).json({ message: messages.passwordsMismatch });
     }
@@ -31,23 +32,21 @@ export default {
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      const userExiste = await prisma.user.findFirst({
+      const userExists = await prisma.user.findFirst({
         where: { email: normalizedEmail },
       });
-     
-      if (userExiste) {
-        return res.status(400).json({ message: "E-mail já existe. Tente outro!" });
-      }
-     
-      
 
-      const hashPassword = await bcrypt.hash(password, 10);
+      if (userExists) {
+        return res.status(400).json({ message: messages.emailExists });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       const user = await prisma.user.create({
         data: {
           username,
           email: normalizedEmail,
-          password: hashPassword,
+          password: hashedPassword,
         },
       });
 
@@ -57,7 +56,8 @@ export default {
         user,
       });
     } catch (error) {
-      return res.status(400).json({
+      console.error("Error creating user:", error.message);
+      return res.status(500).json({
         error: true,
         message: "Ocorreu um erro ao tentar cadastrar o usuário",
         errorMessage: error.message,
@@ -100,7 +100,8 @@ export default {
         userData,
       });
     } catch (error) {
-      return res.status(400).json({
+      console.error("Error during login:", error.message);
+      return res.status(500).json({
         error: true,
         message: "Ocorreu um erro ao tentar fazer login",
         errorMessage: error.message,
@@ -136,6 +137,7 @@ export default {
         },
       });
     } catch (error) {
+      console.error("Error validating token:", error.message);
       return res.status(401).json({ message: messages.tokenInvalid });
     }
   },
@@ -144,8 +146,8 @@ export default {
     const { id } = req.params;
 
     try {
-      const user = await prisma.user.findFirst({
-        where: { id: id },
+      const user = await prisma.user.findUnique({
+        where: { id },
       });
 
       if (!user) {
@@ -158,8 +160,11 @@ export default {
         user,
       });
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Erro interno no servidor" });
+      console.error("Error fetching user:", error.message);
+      return res.status(500).json({
+        message: "Erro interno no servidor",
+        errorMessage: error.message,
+      });
     }
   },
 
@@ -190,20 +195,19 @@ export default {
 
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-      const updatedUser = await prisma.user.update({
+      await prisma.user.update({
         where: { id: userId },
         data: { password: hashedNewPassword },
       });
 
       return res.status(200).json({
         message: messages.passwordUpdated,
-        user: updatedUser,
       });
     } catch (error) {
-      console.error(error);
+      console.error("Error updating password:", error.message);
       return res.status(500).json({
         message: "Erro ao atualizar a senha",
-        error: error.message,
+        errorMessage: error.message,
       });
     }
   },
