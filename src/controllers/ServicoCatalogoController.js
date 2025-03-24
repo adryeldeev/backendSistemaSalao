@@ -6,7 +6,7 @@ export default {
   // Criação de um novo Serviço no Catálogo
   async createServicoCatalogo(req, res) {
     const { nome, preco } = req.body;
-    const userId = req.userId; // Supondo que um middleware já configurou req.userId
+    const userId = req.userId;
 
     if (!nome || !preco) {
       return res.status(400).json({
@@ -27,7 +27,7 @@ export default {
         data: {
           nome,
           preco,
-          userId, // Associa o serviço ao usuário
+          userId, 
         },
       });
 

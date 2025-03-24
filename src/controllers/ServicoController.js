@@ -9,59 +9,70 @@ const getMesAtual = () => {
 };
 
 const ServicoController = {
-    // Criação de um novo Serviço
-    async createServico(req, res) {
-      const { produtoNome, realizadoEm, horario, quantidade, valor, desconto, funcionario, clienteId } = req.body;
-      const userId = req.userId;
+  // Criação de um novo Serviço
+  async createServico(req, res) {
+    const { produtoNome, realizadoEm, horario, quantidade, valor, desconto, funcionario, clienteId } = req.body;
+    
+    const userId = req.userId;
   
-      if (!clienteId || isNaN(Number(clienteId))) {
-        return res.status(400).json({ message: "Erro: ID do cliente é inválido." });
+    if (!clienteId || isNaN(Number(clienteId))) {
+      return res.status(400).json({ message: "Erro: ID do cliente é inválido." });
+    }
+  
+    try {
+      const cliente = await prisma.cliente.findUnique({
+        where: {
+          id: clienteId, // ID do cliente que você está procurando
+        },
+        include: {
+          user: true, // Isso traz o usuário associado ao cliente
+        },
+      });
+      
+      if (!cliente || cliente.userId !== userId) {
+        throw new Error("Cliente não encontrado ou não pertence ao usuário.");
       }
   
-      try {
-        const cliente = await prisma.cliente.findUnique({
-          where: { id: Number(clienteId) },
-        });
+      const servicoCatalogo = await prisma.servicoCatalogo.findFirst({
+        where: { nome: produtoNome, userId },
+      });
   
-        if (!cliente || (userId && cliente.userId !== userId)) {
-          return res.status(404).json({ message: "Cliente não encontrado ou não pertence ao usuário." });
-        }
-  
-        const servicoCatalogo = await prisma.servicoCatalogo.findFirst({
-          where: { nome: produtoNome, userId },
-        });
-  
-        if (!servicoCatalogo) {
-          return res.status(404).json({ message: "Serviço no catálogo não encontrado." });
-        }
-  
-        const realizadoEmAdjusted = moment.tz(realizadoEm, "America/Sao_Paulo").toISOString();
-  
-        const novoServico = await prisma.servico.create({
-          data: {
-            produtoNome: servicoCatalogo.nome,
-            realizadoEm: realizadoEmAdjusted,
-            horario,
-            quantidade,
-            valor,
-            desconto: desconto ? Number(desconto) : null,
-            funcionario,
-            cliente: { connect: { id: Number(clienteId) } },
-            servicoCatalogo: { connect: { id: servicoCatalogo.id } },
-            userId,
-            lastUpdated: new Date(),
-          },
-        });
-  
-        await ServicoController.updateClienteRelevancia(clienteId, userId);
-  
-        return res.status(201).json({ message: "Serviço criado com sucesso!", novoServico });
-      } catch (error) {
-        console.error("Erro ao criar serviço:", error);
-        return res.status(500).json({ message: "Erro interno no servidor." });
+      if (!servicoCatalogo) {
+        return res.status(404).json({ message: "Serviço no catálogo não encontrado." });
       }
-    },
   
+      const realizadoEmAdjusted = moment.tz(realizadoEm, "America/Sao_Paulo").toISOString();
+   
+      const novoServico = await prisma.servico.create({
+        data: {
+          produtoNome: servicoCatalogo.nome,
+          realizadoEm: realizadoEmAdjusted,
+          horario,
+          quantidade,
+          valor,
+          desconto: desconto !== undefined ? Number(desconto) : 0,    // Alterado para `undefined` ao invés de `null`
+          funcionario,
+          cliente: { connect: { id: Number(clienteId) } },
+          servicoCatalogo: { connect: { id: servicoCatalogo.id } },
+          user: userId ? { connect: { id: userId } } : undefined,
+          lastUpdated: new Date(),
+        },
+      });
+  
+      await ServicoController.updateClienteRelevancia(clienteId, userId);
+  
+      return res.status(201).json({ message: "Serviço criado com sucesso!", novoServico });
+    } catch (error) {
+      console.error("Erro ao criar serviço:", error.message, error.stack); // Para imprimir todos os detalhes no console
+  
+      // Retorne detalhes completos do erro para o frontend (apenas em desenvolvimento, pois pode ser inseguro em produção)
+      return res.status(500).json({
+        message: "Erro interno no servidor.",
+        error: error.message,  // Para enviar a mensagem completa do erro
+        stack: error.stack,    // Para enviar o stack trace do erro (opcional)
+      });
+    }
+  },
     // Atualização de um Serviço
     async updateServico(req, res) {
       const { id } = req.params;
@@ -99,7 +110,7 @@ const ServicoController = {
   
         return res.status(200).json({ message: "Serviço atualizado com sucesso!", servicoAtualizado });
       } catch (error) {
-        console.error("Erro ao atualizar serviço:", error);
+        console.log('Error :', error)
         return res.status(500).json({ message: "Erro interno no servidor." });
       }
     },
