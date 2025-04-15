@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import dotenv from 'dotenv'
 
 dotenv.config();
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
 const prisma = new PrismaClient();
 
 const messages = {
@@ -21,7 +22,7 @@ const messages = {
 export default {
   async createUser(req, res) {
     const { username, email, password, confirmPassword } = req.body;
-
+    console.log("Dados recebidos:", { username, email, password });
     if (!username || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: messages.fieldsMissing });
     }
@@ -50,13 +51,14 @@ export default {
           password: hashedPassword,
         },
       });
-
+      console.log('Dados da criação: ', user)
       return res.status(201).json({
         error: false,
         message: messages.userCreated,
         user,
       });
     } catch (error) {
+      console.log('error 500', error)
       console.error("Error creating user:", error.message);
       return res.status(500).json({
         error: true,
@@ -83,12 +85,13 @@ export default {
       if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ message: messages.invalidCredentials });
       }
-      
+      console.log("Usuário encontrado:", user);
       console.log("JWT_SECRET:", process.env.JWT_SECRET);
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-        expiresIn: "7d",
+        expiresIn: "1d",
+         algorithm: 'HS256'
       });
-
+      console.log("Token gerado com sucesso:", token);
       const userData = {
         id: user.id,
         username: user.username,

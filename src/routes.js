@@ -37,7 +37,6 @@ router.get('/servico/cliente/:id',authenticate, ServicoController.getServicosByC
 router.put('/updateServico/:id',authenticate, ServicoController.updateServico);
 router.put('/confirmarServico/:id', authenticate, ServicoController.updateRealizado);
 router.delete('/deletarServico/:id',authenticate, ServicoController.deleteServico);
-router.get('/financas/total-por-mes', authenticate, ServicoController.getTotalPorMes);
 router.get('/financas/total-por-periodo', authenticate, ServicoController.getTotalPorPeriodo);
 router.put('/clientes-relevantes/:id', authenticate, ServicoController.updateClienteRelevancia);
 
