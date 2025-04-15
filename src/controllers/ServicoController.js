@@ -77,40 +77,47 @@ const ServicoController = {
     async updateServico(req, res) {
       const { id } = req.params;
       const { produtoNome, realizadoEm, horario, quantidade, valor, desconto, funcionario, clienteId } = req.body;
-  
+    
       if (!id || isNaN(Number(id))) {
         return res.status(400).json({ message: "Erro: ID do serviço é inválido." });
       }
-  
+    
       try {
+        // Busca o serviço atual no banco de dados
         const servico = await prisma.servico.findUnique({ where: { id: Number(id) } });
-  
+    
         if (!servico) {
           return res.status(404).json({ message: "Serviço não encontrado." });
         }
-  
-        const realizadoEmAdjusted = moment.tz(realizadoEm, "America/Sao_Paulo").toISOString();
-  
+    
+        // Ajusta os campos opcionais: mantém o valor atual se não for enviado no req.body
+        const realizadoEmAdjusted = realizadoEm
+          ? moment.tz(realizadoEm, "America/Sao_Paulo").toISOString()
+          : servico.realizadoEm;
+    
         const servicoAtualizado = await prisma.servico.update({
           where: { id: Number(id) },
           data: {
-            produtoNome,
-            realizadoEm: realizadoEmAdjusted,
-            horario,
-            quantidade,
-            valor,
-            desconto: desconto ? Number(desconto) : null,
-            funcionario,
-            cliente: { connect: { id: Number(clienteId) } },
+            produtoNome: produtoNome || servico.produtoNome, // Mantém o valor atual se não enviado
+            realizadoEm: realizadoEmAdjusted, // Mantém o valor atual se não enviado
+            horario: horario || servico.horario, // Mantém o valor atual se não enviado
+            quantidade: quantidade !== undefined ? quantidade : servico.quantidade, // Mantém o valor atual se não enviado
+            valor: valor !== undefined ? valor : servico.valor, // Mantém o valor atual se não enviado
+            desconto: desconto !== undefined ? Number(desconto) : servico.desconto, // Mantém o valor atual se não enviado
+            funcionario: funcionario || servico.funcionario, // Mantém o valor atual se não enviado
+            cliente: clienteId ? { connect: { id: Number(clienteId) } } : undefined, // Mantém o cliente atual se não enviado
             lastUpdated: new Date(),
           },
         });
-  
-        await ServicoController.updateClienteRelevancia(clienteId);
-  
+    
+        // Atualiza a relevância do cliente, se necessário
+        if (clienteId) {
+          await ServicoController.updateClienteRelevancia(clienteId);
+        }
+    
         return res.status(200).json({ message: "Serviço atualizado com sucesso!", servicoAtualizado });
       } catch (error) {
-        console.log('Error :', error)
+        console.log("Erro ao atualizar serviço:", error);
         return res.status(500).json({ message: "Erro interno no servidor." });
       }
     },

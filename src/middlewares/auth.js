@@ -13,7 +13,7 @@ export const authenticate = (req, res, next) => {
     req.userId = decoded.userId; // Adiciona o ID do usuário à requisição
     next(); // Prossegue para a próxima função
   } catch (error) {
-    console.error("Erro ao verificar o token:", error);
+    console.error("Erro ao verificar o token:", error)
     return res.status(401).json({ message: 'Token inválido ou expirado' });
   }
 };
